@@ -3,6 +3,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/hermead?color=blue)](https://pypi.org/project/hermead/)
 [![License](https://img.shields.io/pypi/l/hermead?color=green)](LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/hermead?color=blueviolet)](https://pypi.org/project/hermead/)
+[![CI](https://github.com/asimons81/hermead/actions/workflows/test.yml/badge.svg)](https://github.com/asimons81/hermead/actions/workflows/test.yml)
 
 **HermeAd** is a Hermes Agent plugin that automatically runs linters, type checkers, formatters, and security scanners on project files after every `write_file` or `patch` tool call.
 
