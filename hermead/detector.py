@@ -15,8 +15,6 @@ import configparser
 import json
 from pathlib import Path
 from typing import Any
-
-
 def detect_tooling(project_root: str | Path) -> dict[str, Any]:
     """Auto-detect available linting and formatting tools for a project.
 
@@ -51,7 +49,7 @@ def _detect_python(root: Path, detected: dict[str, Any]) -> None:
         # ConfigParser with '[' as delimiters works well enough.
         # For production use, consider a TOML parser.
         cfg.read_string(pyproject.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, configparser.ParsingError, json.JSONDecodeError):
         return
 
     python: dict[str, str | None] = {
