@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hermead"
+version = "0.1.0"
+description = "Hermes Agent plugin for project-level linting, type-checking, formatting, and security scanning"
+authors = [{name = "Tony Simons"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.entry-points."hermes_agent.plugins"]
+hermead = "hermead:register"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hermead"]

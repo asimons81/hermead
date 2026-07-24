@@ -1,0 +1,12 @@
+{
+  "name": "hermead",
+  "version": "0.1.0",
+  "description": "Hermes Agent plugin for project-level linting, type-checking, formatting, and security scanning",
+  "entry_point": "hermead:register",
+  "hooks_registered": [
+    "post_tool_call"
+  ],
+  "architecture": "plugin-only",
+  "requires_mcp": false,
+  "requires_web_server": false
+}
