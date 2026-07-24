@@ -61,17 +61,6 @@ Fields:
 
 Empty results (empty array) mean the check passed cleanly or the tool wasn't available.
 
-## Slash Commands
-
-When the HermeAd plugin is loaded with slash command support:
-
-| Command | Description |
-|---------|-------------|
-| `/hermead check <file>` | Run all checks on a single file |
-| `/hermead check <dir>` | Run all checks on every file in a directory |
-| `/hermead status` | Show available tools and current config |
-| `/hermead config` | Show the effective configuration |
-
 ## Configuration
 
 ### Quick Start
@@ -193,7 +182,7 @@ Auto-detection takes priority over explicit config. This means a project with `p
 
 ## Common Pitfalls
 
-1. **Tool not installed.** HermeAd never blocks on a missing tool — it silently returns an empty result. Check availability with `which <tool>` or `/hermead status`. If the report is empty but you expected findings, the tool probably isn't on PATH.
+1. **Tool not installed.** HermeAd never blocks on a missing tool — it silently returns an empty result. Check availability with `which <tool>`. If the report is empty but you expected findings, the tool probably isn't on PATH.
 
 2. **Config file in wrong location.** Per-project config must go in `<project-root>/.hermes/hermead.yaml`, not `.hermead.yaml` or `hermead.yaml` at root. Global config goes in `~/.hermes/hermead.yaml`.
 
@@ -215,5 +204,3 @@ Auto-detection takes priority over explicit config. This means a project with `p
 - [ ] `.hermes/hermead.yaml` overrides global settings
 - [ ] Files matching `ignore_paths` produce no findings
 - [ ] Unavailable tools produce empty results (no crash, no error)
-- [ ] `/hermead status` shows tools HermeAd can find on PATH
-- [ ] `/hermead config` shows merged config (defaults + global + per-project)

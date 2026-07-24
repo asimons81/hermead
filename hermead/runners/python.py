@@ -1,7 +1,8 @@
 """Python runner for HermeAd.
 
-Runs ruff (lint), mypy (type check), bandit (security), black (format check)
-on a Python file and returns structured results.
+Runs ruff (lint), mypy (type check), bandit (security), and
+ruff format / black (format check) on a Python file and returns
+structured results.
 
 Tool availability is checked via PATH. Missing tools are silently skipped
 with a debug log — the runner never crashes.
@@ -243,36 +244,65 @@ def run_security_scan(file_path: str) -> list[dict[str, Any]]:
     return _parse_bandit_json(data)
 
 
-# ── black format checker ──────────────────────────────────────────────────
+# ── Format checker (ruff format --check / black --check) ─────────────
+# ruff format --check exits:
+#   0 -> file already formatted
+#   1 -> file would be reformatted
+#
 # black --check --quiet exits:
-#   0 → file already formatted
-#   1 → file would be reformatted
+#   0 -> file already formatted
+#   1 -> file would be reformatted
 
 
-def run_formatter(file_path: str) -> dict[str, bool]:
-    """Check whether *file_path* needs formatting via ``black --check``.
+def run_formatter(file_path: str, tool: str = "black") -> dict[str, bool]:
+    """Check whether *file_path* needs formatting.
 
-    Returns ``{"needs_formatting": True}`` when black would reformat the file.
-    Returns ``{"needs_formatting": False}`` when already formatted or black
-    is not available.
+    Supports ``ruff`` (``ruff format --check``) and ``black``
+    (``black --check --quiet``). Any other tool name returns
+    ``{"needs_formatting": False}`` gracefully.
+
+    Returns ``{"needs_formatting": True}`` when the formatter would
+    reformat the file.
+    Returns ``{"needs_formatting": False}`` when already formatted or
+    the tool is not available.
     """
     path = Path(file_path)
-    if not _check_tool("black"):
-        _warn_missing_tool("black")
-        return {"needs_formatting": False}
 
-    try:
-        result = subprocess.run(
-            ["black", "--check", "--quiet", str(path)],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug("HermeAd: black --check failed: %s", exc)
-        return {"needs_formatting": False}
+    if tool == "ruff":
+        if not _check_tool("ruff"):
+            _warn_missing_tool("ruff")
+            return {"needs_formatting": False}
+        try:
+            result = subprocess.run(
+                ["ruff", "format", "--check", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            logger.debug("HermeAd: ruff format --check failed: %s", exc)
+            return {"needs_formatting": False}
+        return {"needs_formatting": result.returncode != 0}
 
-    return {"needs_formatting": result.returncode != 0}
+    if tool == "black":
+        if not _check_tool("black"):
+            _warn_missing_tool("black")
+            return {"needs_formatting": False}
+        try:
+            result = subprocess.run(
+                ["black", "--check", "--quiet", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            logger.debug("HermeAd: black --check failed: %s", exc)
+            return {"needs_formatting": False}
+        return {"needs_formatting": result.returncode != 0}
+
+    # Unknown tool -- graceful no-op
+    logger.debug("HermeAd: unknown formatter tool %r -- skipping", tool)
+    return {"needs_formatting": False}
 
 
 # ── Registry-compatible adapters ──────────────────────────────────────────
@@ -298,16 +328,18 @@ def _run_type_check(file_path: str, project_root: str | Path, **kwargs: Any) -> 
 
 
 def _run_format_check(file_path: str, project_root: str | Path, **kwargs: Any) -> list[dict[str, Any]]:
-    """Registry adapter: run black --check with standard output format."""
-    result = run_formatter(file_path)
+    """Registry adapter: run formatter with standard output format."""
+    tool = kwargs.get("tool", "black")
+    result = run_formatter(file_path, tool=tool)
     if result.get("needs_formatting"):
+        fix_cmd = f"Run `{tool} format` to fix." if tool == "ruff" else f"Run `{tool}` to fix."
         return [{
-            "tool": "black",
+            "tool": tool,
             "severity": "style",
             "line": None,
             "col": None,
-            "message": "File is not black-formatted. Run `black` to fix.",
-            "code": "black",
+            "message": f"File is not {tool}-formatted. {fix_cmd}",
+            "code": tool,
         }]
     return []
 
@@ -372,7 +404,7 @@ def run_all(
     if type_check_tool == "mypy":
         results["type_check"] = run_type_checker(file_path)
     if formatter_tool in ("black", "ruff"):
-        results["format"] = run_formatter(file_path)
+        results["format"] = run_formatter(file_path, tool=formatter_tool)
     if security_tool == "bandit":
         results["security"] = run_security_scan(file_path)
 

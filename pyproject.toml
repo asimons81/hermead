@@ -17,5 +17,9 @@ dependencies = [
 [project.entry-points."hermes_agent.plugins"]
 hermead = "hermead:register"
 
+[project.optional-dependencies]
+dev = ["pytest", "pytest-timeout"]
+dashboard = ["fastapi"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["hermead"]

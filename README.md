@@ -48,7 +48,7 @@ hermes plugin list
 - **Per-project config.** `.hermes/hermead.yaml` overrides global `~/.hermes/hermead.yaml`, which overrides built-in defaults.
 - **Threshold system.** Set findings to `block`, `warn`, or `ignore` per severity level (lint warnings, type errors, security findings).
 - **6 language runners.** Python, JavaScript/TypeScript, Go, Rust, Shell, and a Generic runner for config/script files (semgrep).
-- **Graceful degredation.** Missing tools produce empty results. No crashes, no spurious errors. Use `/hermead status` to check availability.
+- **Graceful degredation.** Missing tools produce empty results. No crashes, no spurious errors. Use `which <tool>` to check availability.
 - **Ignore patterns.** Skip `node_modules/`, `venv/`, build output dirs, and anything else you add.
 - **Extra CLI args.** Pass custom flags per tool (e.g. `ruff: ["--line-length", "100"]`).
 

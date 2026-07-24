@@ -91,12 +91,13 @@ def _parse_golangci_json(
                 "col": pos.get("Column"),
                 "message": text,
                 "code": linter or None,
+                "file": pos.get("Filename", ""),
             }
         )
 
     # Filter to only items for the given file
     file_abs = str(Path(file_path).resolve())
-    return [r for r in results if r["line"] is not None]
+    return [r for r in results if str(Path(r.get("file", "")).resolve()) == file_abs]
 
 
 def _run_lint_text(

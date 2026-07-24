@@ -79,14 +79,16 @@ def _py_type_check(file_path: str, project_root: str | Path, **kwargs: Any) -> l
 
 
 def _py_format(file_path: str, project_root: str | Path, **kwargs: Any) -> list[dict[str, Any]]:
-    result = _py_run_formatter(file_path)
+    tool = kwargs.get("tool", "black")
+    result = _py_run_formatter(file_path, tool=tool)
     if isinstance(result, dict) and result.get("needs_formatting"):
+        fix_cmd = f"Run `{tool} format` to fix." if tool == "ruff" else f"Run `{tool}` to fix."
         return [{
-            "tool": "black",
+            "tool": tool,
             "severity": "style",
             "line": None, "col": None,
-            "message": "File is not black-formatted. Run `black` to fix.",
-            "code": "black",
+            "message": f"File is not {tool}-formatted. {fix_cmd}",
+            "code": tool,
         }]
     return []
 

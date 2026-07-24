@@ -278,3 +278,7 @@ def post_tool_call(
 
     # Persist results for the dashboard
     record_results(all_results, file_path=path_str, language=ftype, project_root=project_root)
+
+    # Store results as function attributes for test assertions and dashboards
+    post_tool_call._last_results = all_results
+    post_tool_call._last_structured = format_structured(all_results)
