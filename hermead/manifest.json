@@ -6,6 +6,9 @@
   "hooks_registered": [
     "post_tool_call"
   ],
+  "commands_registered": [
+    "hermead"
+  ],
   "architecture": "plugin-only",
   "requires_mcp": false,
   "requires_web_server": false

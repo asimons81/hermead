@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.entry-points."hermes_agent.plugins"]
-hermead = "hermead:register"
+hermead = "hermead"
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-timeout", "ruff", "mypy"]

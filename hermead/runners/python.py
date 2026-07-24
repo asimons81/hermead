@@ -112,6 +112,7 @@ def run_linter(file_path: str) -> list[dict[str, Any]]:
             capture_output=True,
             text=True,
             timeout=60,
+            check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
         logger.debug("HermeAd: ruff check failed: %s", exc)
@@ -171,6 +172,7 @@ def run_type_checker(file_path: str) -> list[dict[str, Any]]:
             capture_output=True,
             text=True,
             timeout=120,
+            check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
         logger.debug("HermeAd: mypy failed: %s", exc)
@@ -222,6 +224,7 @@ def run_security_scan(file_path: str) -> list[dict[str, Any]]:
             capture_output=True,
             text=True,
             timeout=120,
+            check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
         logger.debug("HermeAd: bandit failed: %s", exc)
@@ -278,6 +281,7 @@ def run_formatter(file_path: str, tool: str = "black") -> dict[str, bool]:
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as exc:
             logger.debug("HermeAd: ruff format --check failed: %s", exc)
@@ -294,6 +298,7 @@ def run_formatter(file_path: str, tool: str = "black") -> dict[str, bool]:
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as exc:
             logger.debug("HermeAd: black --check failed: %s", exc)

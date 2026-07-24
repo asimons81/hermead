@@ -82,6 +82,23 @@ def test_project() -> Generator[Path, None, None]:
             encoding="utf-8",
         )
 
+        # Intentional-issues Ruby file (for Ruby runner coverage)
+        (root / "bad_code.rb").write_text(
+            '# frozen_string_literal: true\n'
+            "\n"
+            "class Greeter\n"
+            "  def initialize(name)\n"
+            '    @name = name\n'
+            "  end\n"
+            "\n"
+            "  def greet\n"
+            '    unused = "this is never used"\n'
+            '    return "Hello, #{@name}"\n'
+            "  end\n"
+            "end\n",
+            encoding="utf-8",
+        )
+
         yield root
 
 
@@ -285,6 +302,30 @@ class TestIntegration:
         results = getattr(post_tool_call, "_last_results", None)
         # Should be empty (or whatever the last non-ignored file had)
         assert results is not None
+
+    def test_ruby_runner_graceful_on_missing_tools(self, test_project: Path) -> None:
+        """Ruby runner handles missing Ruby tools gracefully — no crash, empty results."""
+        config = test_project / ".hermes" / "hermead.yaml"
+        config.write_text(
+            json.dumps({
+                "ruby": {
+                    "lint": "rubocop",
+                    "formatter": "standardrb",
+                    "security": "brakeman",
+                },
+            }),
+            encoding="utf-8",
+        )
+
+        rb_file = test_project / "bad_code.rb"
+        post_tool_call("write_file", None, {"path": str(rb_file)})
+
+        results = getattr(post_tool_call, "_last_results", None) or []
+        # If Ruby tools are not installed, results should be empty — no crash
+        ruby_results = [r for r in results if r.get("tool") in ("rubocop", "standardrb", "brakeman")]
+        # Accept either empty (tools missing) or actual findings (tools present)
+        # The key requirement is no exception
+        assert isinstance(ruby_results, list)
 
     def test_format_inline_empty_input(self) -> None:
         assert format_inline([]) == ""

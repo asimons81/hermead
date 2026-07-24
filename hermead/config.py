@@ -42,6 +42,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "formatter": "shfmt",
         "security": None,
     },
+    "ruby": {
+        "lint": "rubocop",
+        "type_check": None,
+        "formatter": "standardrb",
+        "security": "brakeman",
+    },
     "generic": {
         "lint": "semgrep",
         "type_check": None,

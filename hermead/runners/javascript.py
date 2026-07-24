@@ -8,14 +8,12 @@ empty list on success.
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -66,6 +64,7 @@ def _run_npx(
         text=True,
         cwd=cwd,
         timeout=timeout,
+        check=False,
     )
 
 
@@ -100,7 +99,6 @@ def _parse_eslint_results(data: Any) -> list[dict[str, Any]]:
         return findings
 
     for result in data:
-        file_path = result.get("filePath", "")
         for msg in result.get("messages", []):
             severity = ESLINT_SEVERITY_MAP.get(msg.get("severity", 1), "warning")
             findings.append(

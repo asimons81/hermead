@@ -44,11 +44,11 @@ hermes plugin list
 
 ## Features
 
-- **Zero-config for common projects.** Works out of the box with ruff + mypy for Python, eslint + prettier + tsc for JS/TS, golangci-lint + go vet + gofmt for Go, clippy + rustfmt for Rust, shellcheck for shell scripts.
-- **Auto-detection.** Reads `pyproject.toml`, `package.json`, `go.mod`, `Cargo.toml`, and `.shellcheckrc` to pick the right tools. Auto-detected tools take priority over config.
+- **Zero-config for common projects.** Works out of the box with ruff + mypy for Python, eslint + prettier + tsc for JS/TS, golangci-lint + go vet + gofmt for Go, clippy + rustfmt for Rust, shellcheck for shell scripts, and rubocop + standardrb + brakeman for Ruby.
+- **Auto-detection.** Reads `pyproject.toml`, `package.json`, `go.mod`, `Cargo.toml`, `.shellcheckrc`, and `.rubocop.yml`/`Gemfile` to pick the right tools. Auto-detected tools take priority over config.
 - **Per-project config.** `.hermes/hermead.yaml` overrides global `~/.hermes/hermead.yaml`, which overrides built-in defaults.
 - **Threshold system.** Set findings to `block`, `warn`, or `ignore` per severity level (lint warnings, type errors, security findings).
-- **6 language runners.** Python, JavaScript/TypeScript, Go, Rust, Shell, and a Generic runner for config/script files (semgrep).
+- **7 language runners.** Python, JavaScript/TypeScript, Go, Rust, Shell, Ruby, and a Generic runner for config/script files (semgrep).
 - **Graceful degredation.** Missing tools produce empty results. No crashes, no spurious errors. Use `which <tool>` to check availability.
 - **Ignore patterns.** Skip `node_modules/`, `venv/`, build output dirs, and anything else you add.
 - **Extra CLI args.** Pass custom flags per tool (e.g. `ruff: ["--line-length", "100"]`).
@@ -146,6 +146,7 @@ extra_args:
 | Go | `.go` | golangci-lint | go vet | gofmt | gosec |
 | Rust | `.rs` | clippy | cargo check | rustfmt | cargo audit |
 | Shell | `.sh`, `.bash`, `.zsh`, `.fish` | shellcheck | — | shfmt | — |
+| Ruby | `.rb`, Gemfile, Rakefile | rubocop | — | standardrb | brakeman |
 | Generic | Dockerfile, Makefile, `.gitignore`, etc. | semgrep | — | — | semgrep |
 
 ## Inline Reports
@@ -153,15 +154,9 @@ extra_args:
 When HermeAd runs, findings appear in your session as structured results:
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║  HermeAd — lint results for src/main.py                 ║
-╠══════════════════════════════════════════════════════════╣
-║  tool: ruff  severity: error  line: 42  col: 5          ║
-║  F841 — local variable 'x' is assigned to but never     ║
-║  used                                                    ║
-╠══════════════════════════════════════════════════════════╣
-║  2 findings (1 error, 1 warning) — 0 blocked, 2 warned  ║
-╚══════════════════════════════════════════════════════════╝
+🔍 ruff: 1 error
+
+  🔍(line 42:5) F841 — local variable 'x' is assigned to but never used (F841)
 ```
 
 Each result shows the tool, severity, source location, message, and rule code. Empty output means the file passed or the tool wasn't available.

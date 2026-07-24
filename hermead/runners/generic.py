@@ -30,6 +30,7 @@ def _print_run(
         text=True,
         timeout=timeout,
         cwd=cwd,
+        check=False,
     )
 
 

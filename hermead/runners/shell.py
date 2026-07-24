@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
-import re
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +33,7 @@ def _print_run(
         text=True,
         timeout=timeout,
         cwd=cwd,
+        check=False,
     )
 
 

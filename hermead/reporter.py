@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +31,10 @@ TOOL_EMOJI: dict[str, str] = {
     "golangci-lint": "\U0001f50d",
     "clippy": "\U0001f50d",
     "shellcheck": "\U0001f50d",
+    # Ruby tools
+    "rubocop": "\U0001f50d",
+    "standardrb": "\u2728",
+    "brakeman": "\U0001f512",
     # Type checkers
     "mypy": "\U0001f3f7\ufe0f",  # 🏷️
     "tsc": "\U0001f3f7\ufe0f",
@@ -196,11 +200,11 @@ def _save(data: dict[str, Any]) -> None:
 
 def start_session(project_root: str | Path) -> str:
     """Open a new session and return its id."""
-    session_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    session_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
     entry = {
         "session_id": session_id,
         "project_root": str(project_root),
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "files_checked": 0,
         "issues_found": 0,
         "blocked_writes": 0,
@@ -223,7 +227,7 @@ def record_results(
     """Persist a batch of scan results to the JSON store."""
     with LOCK:
         store = _load()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Use session_id or latest, creating one if needed
         session = _find_or_create_session(store, project_root, session_id)
@@ -281,7 +285,7 @@ def record_blocked_write(file_path: str, project_root: str | Path) -> None:
         store = _load()
         session = _find_or_create_session(store, project_root)
         session["blocked_writes"] += 1
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         session["findings"].append({
             "tool": "hermead",
             "severity": "error",
@@ -403,11 +407,11 @@ def _find_or_create_session(
     if sessions:
         return sessions[-1]
     # Create a new session in-place
-    sid = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    sid = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
     entry = {
         "session_id": sid,
         "project_root": str(project_root),
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "files_checked": 0,
         "issues_found": 0,
         "blocked_writes": 0,

@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
-import re
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +33,7 @@ def _print_run(
         text=True,
         timeout=timeout,
         cwd=cwd,
+        check=False,
     )
 
 
@@ -57,7 +57,7 @@ def _run_lint(
     try:
         rel_path = file_abs.relative_to(proj_root)
     except ValueError:
-        rel_path = file_abs.name
+        rel_path = Path(file_abs.name)
 
     try:
         proc = _print_run(
@@ -73,10 +73,18 @@ def _run_lint(
                 "clippy::pedantic",
             ],
             cwd=str(proj_root),
-            timeout=300,
+            timeout=5,
         )
     except subprocess.TimeoutExpired:
-        return []
+        # Full-project compile can take 30-300s; return a warning instead of blocking
+        return [{
+            "tool": "clippy",
+            "severity": "info",
+            "line": None,
+            "col": None,
+            "message": "cargo clippy timed out after 5s (project-level compilation). Run `cargo clippy` manually for full results.",
+            "code": "TIMEOUT",
+        }]
     except FileNotFoundError:
         return []
 
@@ -162,16 +170,23 @@ def _run_type_check(
     try:
         rel_path = file_abs.relative_to(proj_root)
     except ValueError:
-        rel_path = file_abs.name
+        rel_path = Path(file_abs.name)
 
     try:
         proc = _print_run(
             ["cargo", "check", "--message-format=json", "--quiet"],
             cwd=str(proj_root),
-            timeout=300,
+            timeout=5,
         )
     except subprocess.TimeoutExpired:
-        return []
+        return [{
+            "tool": "rustc",
+            "severity": "info",
+            "line": None,
+            "col": None,
+            "message": "cargo check timed out after 5s (project-level compilation). Run `cargo check` manually for full results.",
+            "code": "TIMEOUT",
+        }]
     except FileNotFoundError:
         return []
 

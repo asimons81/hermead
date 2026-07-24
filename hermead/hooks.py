@@ -8,17 +8,19 @@ scanning.
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
-import logging
-
 from hermead import runners
 from hermead.config import find_project_root, load_hermead_config
 from hermead.detector import detect_tooling
-from hermead.reporter import format_full, format_structured
-from hermead.reporter import record_results, start_session
+from hermead.reporter import (
+    format_full,
+    format_structured,
+    record_results,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,7 @@ EXTENSION_MAP: dict[str, str] = {
     ".bash": "shell",
     ".zsh": "shell",
     ".fish": "shell",
+    ".rb": "ruby",
 }
 
 FILE_MAP: dict[str, str] = {
@@ -49,6 +52,8 @@ FILE_MAP: dict[str, str] = {
     "package.json": "javascript",
     "go.mod": "go",
     "Cargo.toml": "rust",
+    "Gemfile": "ruby",
+    "Rakefile": "ruby",
 }
 
 
@@ -65,7 +70,7 @@ def _file_type(file_path: str | Path) -> str | None:
     if not ext and path.is_file():
         try:
             first_line = path.read_text(encoding="utf-8", errors="replace").split("\n", 1)[0]
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             return None
         if first_line.startswith("#!/"):
             for token in ("python", "bash", "sh", "zsh", "node", "deno", "go", "rust"):
@@ -144,7 +149,7 @@ def _log_threshold_warnings(
     security_high = 0
     security_medium = 0
 
-    security_tools = {"bandit", "gosec", "cargo audit", "semgrep"}
+    security_tools = {"bandit", "gosec", "cargo audit", "semgrep", "brakeman"}
 
     for r in results:
         tool = r.get("tool", "")
@@ -153,12 +158,12 @@ def _log_threshold_warnings(
             continue
 
         # Lint tools
-        if tool in {"ruff", "eslint", "golangci-lint", "clippy", "shellcheck"}:
+        if tool in {"ruff", "eslint", "golangci-lint", "clippy", "shellcheck", "rubocop"}:
             lint_errors += 1
         # Type check tools
         elif tool in {"mypy", "tsc", "go vet", "rustc"}:
             type_errors += 1
-        # Security tools — bandit, gosec, cargo audit
+        # Security tools — bandit, gosec, cargo audit, brakeman
         elif tool in security_tools:
             security_high += 1
 
@@ -280,5 +285,5 @@ def post_tool_call(
     record_results(all_results, file_path=path_str, language=ftype, project_root=project_root)
 
     # Store results as function attributes for test assertions and dashboards
-    post_tool_call._last_results = all_results
-    post_tool_call._last_structured = format_structured(all_results)
+    post_tool_call._last_results = all_results  # type: ignore[attr-defined]
+    post_tool_call._last_structured = format_structured(all_results)  # type: ignore[attr-defined]

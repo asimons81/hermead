@@ -157,6 +157,96 @@ extra_args:
   golangci-lint: ["--timeout", "5m"]
 ```
 
+## Slash Commands
+
+HermeAd registers a `/hermead` slash command with three subcommands. Use them in any Hermes session (CLI, Telegram, Discord, etc.).
+
+### /hermead check
+
+```
+/hermead check <file_or_dir>
+```
+
+Runs all applicable linters, type checkers, formatters, and security scanners on a file or directory. Uses the same detection and runner dispatch as the auto-hook.
+
+**Examples:**
+
+```
+/hermead check src/app.py
+→ HermeAd check: 1 file(s) checked, 3 finding(s)
+  🔍 ruff: 2 errors
+  🔒 bandit: 1 error
+
+/hermead check src/
+→ HermeAd check: 14 file(s) checked, 0 finding(s)
+```
+
+### /hermead status
+
+```
+/hermead status
+```
+
+Shows tool availability per language, config file paths, and session statistics.
+
+**Example output:**
+
+```
+Tool Availability:
+  python: ✅ lint | ❌ type_check | ✅ formatter | ❌ security
+  go: ✅ lint | ✅ type_check | ✅ formatter | ❌ security
+
+Global config: C:\Users\asimo\.hermes\hermead.yaml
+  ❌ Not found (using defaults)
+Project root: C:\Users\asimo\projects\myapp
+Project config: C:\Users\asimo\projects\myapp\.hermes\hermead.yaml
+  ✅ Present
+
+Last Session Stats:
+  Session id:    20260724_151200_123456
+  Files checked: 8
+  Issues found:  12
+  Blocked writes:0
+```
+
+### /hermead config
+
+```
+/hermead config
+```
+
+Shows the resolved effective configuration, including the merge chain from built-in defaults through global (`~/.hermes/hermead.yaml`) to per-project overrides (`.hermes/hermead.yaml`).
+
+**Example output:**
+
+```
+Config Merge Chain:
+  1. Built-in defaults (11 top-level keys)
+  2. Global: C:\Users\asimo\.hermes\hermead.yaml  [not found]
+  3. Project: C:\Users\asimo\projects\myapp\.hermes\hermead.yaml  [present]
+
+Effective Config:
+  python:
+    lint: ruff
+    type_check: mypy
+    formatter: ruff
+    security: bandit
+  ...
+  thresholds:
+    lint_warnings: warn
+    type_errors: block
+    security_high: warn
+  ignore_paths:
+    - node_modules/**
+```
+
+## Usage Tips
+
+- Use `/hermead status` to quickly check whether your expected tools are on PATH.
+- Use `/hermead config` to debug unexpected config overrides — see the merge chain.
+- Use `/hermead check <file>` to manually run checks after fixing reported issues.
+- `/hermead check` on a directory recursively finds supported files.
+
 ## Supported Languages
 
 | Language | Extensions | Lint | Type Check | Format | Security |
@@ -190,7 +280,7 @@ Auto-detection takes priority over explicit config. This means a project with `p
 
 4. **Sensitive files not ignored.** By default HermeAd skips `node_modules/`, `venv/`, `.git/`, and common build output dirs. Add your own patterns if you're using a monorepo with unconventional output paths.
 
-5. **Threshold confusion.** `block` means the result is surfaced prominently (may abort the tool call). `warn` means a passive suggestion in the output. `ignore` means the result is discarded. `block` thresholds are respected per-severity — a `type_errors: block` only blocks on actual errors in that category, not all findings.
+5. **Threshold confusion.** `block` means a prominent warning in the log output. `warn` means a passive suggestion in the output. `ignore` means the result is discarded. Hermes plugin hooks can't prevent tool execution, so thresholds are advisory only — they log warnings when exceeded but do not block the tool call. Thresholds apply per-severity: a `type_errors: block` warns on actual type errors, not all findings.
 
 6. **Format checks are read-only.** HermeAd checks whether a file matches formatter output but never auto-formats. Format-check results appear as `style`-severity items when formatting would change the file. Run the formatter manually or configure a save-hook in your editor.
 

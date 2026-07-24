@@ -14,8 +14,9 @@ Standard result item::
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 # ── Registry ──────────────────────────────────────────────────────────────
 
@@ -64,8 +65,14 @@ def run(
 
 from hermead.runners.python import (
     run_formatter as _py_run_formatter,
+)
+from hermead.runners.python import (
     run_linter as _py_run_linter,
+)
+from hermead.runners.python import (
     run_security_scan as _py_run_security_scan,
+)
+from hermead.runners.python import (
     run_type_checker as _py_run_type_checker,
 )
 
@@ -122,8 +129,14 @@ register_runner("python", "run_security", _py_security)
 
 from hermead.runners.javascript import (
     run_formatter as _js_run_formatter,
+)
+from hermead.runners.javascript import (
     run_linter as _js_run_linter,
+)
+from hermead.runners.javascript import (
     run_security_scan as _js_run_security_scan,
+)
+from hermead.runners.javascript import (
     run_type_checker as _js_run_type_checker,
 )
 
@@ -152,7 +165,8 @@ register_runner("javascript", "run_security", _js_security)
 
 # ── Generic / Go / Rust / Shell runners (self-register on import) ──────
 
-import hermead.runners.generic   # noqa: F401, E402
-import hermead.runners.go         # noqa: F401, E402
-import hermead.runners.rust       # noqa: F401, E402
-import hermead.runners.shell      # noqa: F401, E402
+import hermead.runners.generic
+import hermead.runners.go
+import hermead.runners.ruby
+import hermead.runners.rust
+import hermead.runners.shell  # noqa: F401

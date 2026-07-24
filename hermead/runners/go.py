@@ -6,9 +6,9 @@ Available only when ``go.mod`` exists in the project root.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
-import re
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +28,7 @@ def _print_run(args: list[str], cwd: str | None, timeout: int = 60) -> subproces
         text=True,
         timeout=timeout,
         cwd=cwd,
+        check=False,
     )
 
 
@@ -103,7 +104,8 @@ def _parse_golangci_json(
 def _run_lint_text(
     file_path: str, proc: subprocess.CompletedProcess
 ) -> list[dict[str, Any]]:
-    """Fallback: parse golangci-lint text output."""
+    """Fallback: parse golangci-lint text output, filtered to *file_path*."""
+    target_abs = str(Path(file_path).resolve())
     results: list[dict[str, Any]] = []
     # Typical format: path/file.go:line:col: message (linter)
     pattern = re.compile(
@@ -116,26 +118,30 @@ def _run_lint_text(
             continue
         m = pattern.match(line)
         if m:
+            result_path = m.group(1).strip()
+            # Resolve the result path relative to the file_path's directory
+            result_abs = str(
+                (Path(file_path).parent / result_path).resolve()
+            )
+            if result_abs != target_abs:
+                continue
             results.append(
                 {
                     "tool": "golangci-lint",
                     "severity": "warning",
-                    "line": int(m.group(2)),
-                    "col": int(m.group(3)) if m.group(3) else None,
                     "message": m.group(4).strip(),
+                    "line": int(m.group(2)),
+                    "col": int(m.group(3)) if m.group(3) else 1,
                     "code": m.group(5).strip(),
                 }
             )
     return results
 
 
-# ── Type check: go vet ────────────────────────────────────────────────────
-
-
 def _run_type_check(
     file_path: str, project_root: str | Path, **kwargs: Any
 ) -> list[dict[str, Any]]:
-    """Run ``go vet`` on the file's package."""
+    """Run go vet on the file's package, filtered to *file_path*."""
     if not _has_go_tool("go"):
         return []
 
@@ -158,6 +164,7 @@ def _run_type_check(
     if proc.returncode == 0:
         return []
 
+    target_abs = str(Path(file_path).resolve())
     results: list[dict[str, Any]] = []
     pattern = re.compile(r"^(.+?)\.go:(\d+):(\d+)?:\s*(.*)")
 
@@ -167,6 +174,12 @@ def _run_type_check(
             continue
         m = pattern.match(line)
         if m:
+            result_path = m.group(1).strip()
+            result_abs = str(
+                (Path(file_path).parent / result_path).resolve()
+            )
+            if result_abs != target_abs:
+                continue
             results.append(
                 {
                     "tool": "go vet",
@@ -179,9 +192,6 @@ def _run_type_check(
             )
 
     return results
-
-
-# ── Formatter: gofmt ─────────────────────────────────────────────────────
 
 
 def _run_format_check(
