@@ -18,7 +18,7 @@ dependencies = [
 hermead = "hermead:register"
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-timeout"]
+dev = ["pytest", "pytest-timeout", "ruff", "mypy"]
 dashboard = ["fastapi"]
 
 [tool.hatch.build.targets.wheel]
