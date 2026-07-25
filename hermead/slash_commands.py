@@ -258,7 +258,7 @@ def _handle_config(raw_args: str) -> str:
             lines.extend(_format_config_section(section, effective[section]))
 
     # Non-language sections
-    for section in ("thresholds", "ignore_paths", "extra_args"):
+    for section in ("thresholds", "ignore_paths"):
         if section in effective:
             lines.append(f"  {section}:")
             val = effective[section]

@@ -11,10 +11,12 @@ Supports:
 
 from __future__ import annotations
 
-import configparser
 import json
+import tomllib
 from pathlib import Path
 from typing import Any
+
+
 def detect_tooling(project_root: str | Path) -> dict[str, Any]:
     """Auto-detect available linting and formatting tools for a project.
 
@@ -43,13 +45,13 @@ def _detect_python(root: Path, detected: dict[str, Any]) -> None:
     if not pyproject.is_file():
         return
 
-    cfg = configparser.ConfigParser()
     try:
-        # TOML is not INI, but for our narrow pattern (tool.X sections)
-        # ConfigParser with '[' as delimiters works well enough.
-        # For production use, consider a TOML parser.
-        cfg.read_string(pyproject.read_text(encoding="utf-8"))
-    except (OSError, configparser.ParsingError, json.JSONDecodeError):
+        cfg = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return
+
+    tools = cfg.get("tool", {})
+    if not isinstance(tools, dict):
         return
 
     python: dict[str, str | None] = {
@@ -59,13 +61,13 @@ def _detect_python(root: Path, detected: dict[str, Any]) -> None:
         "security": None,
     }
 
-    if cfg.has_section("tool.ruff"):
+    if isinstance(tools.get("ruff"), dict):
         python["lint"] = "ruff"
-        if cfg.has_section("tool.ruff.format") or cfg.has_option("tool.ruff", "format"):
-            python["formatter"] = "ruff"
-    if cfg.has_section("tool.mypy"):
+        # Ruff's formatter needs no separate configuration section.
+        python["formatter"] = "ruff"
+    if isinstance(tools.get("mypy"), dict):
         python["type_check"] = "mypy"
-    if cfg.has_section("tool.black"):
+    if isinstance(tools.get("black"), dict):
         python["formatter"] = "black"
 
     if any(python.values()):

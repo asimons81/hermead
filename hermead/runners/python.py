@@ -207,7 +207,7 @@ def _parse_bandit_json(data: dict[str, Any]) -> list[dict[str, Any]]:
     return results
 
 
-def run_security_scan(file_path: str) -> list[dict[str, Any]]:
+def _run_bandit_security_scan(file_path: str) -> list[dict[str, Any]]:
     """Run ``bandit`` on *file_path* and return parsed security issues.
 
     Uses JSON output format for reliable parsing. Returns an empty list when
@@ -245,6 +245,62 @@ def run_security_scan(file_path: str) -> list[dict[str, Any]]:
         return []
 
     return _parse_bandit_json(data)
+
+
+def _parse_semgrep_json(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Convert Semgrep JSON to the raw security shape used by Bandit."""
+    results: list[dict[str, Any]] = []
+    for issue in data.get("results", []):
+        extra = issue.get("extra", {})
+        raw_severity = str(extra.get("severity", "WARNING")).upper()
+        severity = {
+            "CRITICAL": "HIGH", "ERROR": "HIGH", "WARNING": "MEDIUM",
+            "WARN": "MEDIUM", "INFO": "LOW",
+        }.get(raw_severity, "MEDIUM")
+        results.append({
+            "severity": severity,
+            "line": issue.get("start", {}).get("line"),
+            "vuln_type": issue.get("check_id", ""),
+            "message": extra.get("message", ""),
+        })
+    return results
+
+
+def _run_semgrep_security_scan(file_path: str) -> list[dict[str, Any]]:
+    """Run Semgrep's security rules against one Python file."""
+    if not _check_tool("semgrep"):
+        _warn_missing_tool("semgrep")
+        return []
+    try:
+        result = subprocess.run(
+            ["semgrep", "--json", "--quiet", "--no-error-on-files", "--config",
+             "p/security-audit", str(Path(file_path))],
+            capture_output=True, text=True, timeout=120, check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        logger.debug("HermeAd: semgrep failed: %s", exc)
+        return []
+    if not result.stdout.strip():
+        return []
+    try:
+        return _parse_semgrep_json(json.loads(result.stdout))
+    except json.JSONDecodeError as exc:
+        logger.debug("HermeAd: semgrep JSON parse failed: %s", exc)
+        return []
+
+
+def run_security_scan(file_path: str, tool: str = "bandit") -> list[dict[str, Any]]:
+    """Run configured Python security scanning with Bandit or Semgrep.
+
+    Unsupported tools are a safe no-op: a post-write hook must never invoke
+    arbitrary configured executables.
+    """
+    if tool == "bandit":
+        return _run_bandit_security_scan(file_path)
+    if tool == "semgrep":
+        return _run_semgrep_security_scan(file_path)
+    logger.debug("HermeAd: unsupported Python security tool %r -- skipping", tool)
+    return []
 
 
 # ── Format checker (ruff format --check / black --check) ─────────────
@@ -350,10 +406,11 @@ def _run_format_check(file_path: str, project_root: str | Path, **kwargs: Any) -
 
 
 def _run_security(file_path: str, project_root: str | Path, **kwargs: Any) -> list[dict[str, Any]]:
-    """Registry adapter: run bandit with standard output format."""
-    results = run_security_scan(file_path)
+    """Registry adapter: run the configured security scanner."""
+    tool = kwargs.get("tool", "bandit")
+    results = run_security_scan(file_path, tool=tool)
     for r in results:
-        r.setdefault("tool", "bandit")
+        r.setdefault("tool", tool)
     return results
 
 
@@ -410,7 +467,7 @@ def run_all(
         results["type_check"] = run_type_checker(file_path)
     if formatter_tool in ("black", "ruff"):
         results["format"] = run_formatter(file_path, tool=formatter_tool)
-    if security_tool == "bandit":
-        results["security"] = run_security_scan(file_path)
+    if security_tool in ("bandit", "semgrep"):
+        results["security"] = run_security_scan(file_path, tool=security_tool)
 
     return results

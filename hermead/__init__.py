@@ -13,7 +13,10 @@ from hermead.slash_commands import handle as handle_slash_command
 
 logger = logging.getLogger(__name__)
 
-__version__ = "0.1.0"
+# Keep this in sync with the release version in pyproject.toml.  It is used by
+# the legacy Hermes registration path, where installed package metadata may
+# not be available yet (for example when running from a source checkout).
+__version__ = "0.2.0"
 
 
 def register(ctx: Any | None = None) -> dict[str, Any] | None:

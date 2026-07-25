@@ -2,7 +2,7 @@
   "name": "hermead",
   "version": "0.2.0",
   "description": "Hermes Agent plugin for project-level linting, type-checking, formatting, and security scanning",
-  "entry_point": "hermead:register",
+  "entry_point": "hermead",
   "hooks_registered": [
     "post_tool_call"
   ],

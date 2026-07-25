@@ -9,11 +9,15 @@ Layers:
 from __future__ import annotations
 
 import json
+import logging
 import os
+import tempfile
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Part 1 — formatting (for agent output)
@@ -176,26 +180,52 @@ RESULTS_FILE = HERMEAD_HOME / "data" / "results.json"
 LOCK = threading.RLock()
 
 
+def _empty_store() -> dict[str, Any]:
+    return {"sessions": [], "files": {}, "version": 1}
+
+
 def _ensure_dir() -> None:
     RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
 def _load() -> dict[str, Any]:
-    _ensure_dir()
-    if RESULTS_FILE.is_file():
-        try:
+    try:
+        _ensure_dir()
+        if RESULTS_FILE.is_file():
             raw = RESULTS_FILE.read_text(encoding="utf-8")
             return json.loads(raw)
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {"sessions": [], "files": {}, "version": 1}
+    except (json.JSONDecodeError, OSError):
+        logger.warning(
+            "HermeAd result store is unavailable; using an in-memory store",
+            exc_info=True,
+        )
+    return _empty_store()
 
 
-def _save(data: dict[str, Any]) -> None:
-    _ensure_dir()
-    tmp = RESULTS_FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-    tmp.replace(RESULTS_FILE)
+def _save(data: dict[str, Any]) -> bool:
+    """Atomically replace the result store without risking its prior contents."""
+    tmp_path: Path | None = None
+    try:
+        _ensure_dir()
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{RESULTS_FILE.name}.", suffix=".tmp", dir=RESULTS_FILE.parent
+        )
+        tmp_path = Path(tmp_name)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(data, handle, indent=2, default=str)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, RESULTS_FILE)
+        return True
+    except (OSError, TypeError, ValueError):
+        logger.warning("HermeAd could not save result store", exc_info=True)
+        return False
+    finally:
+        if tmp_path is not None:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 def start_session(project_root: str | Path) -> str:
@@ -369,7 +399,7 @@ def get_tool_status() -> dict[str, dict[str, bool]]:
 
     status: dict[str, dict[str, bool]] = {}
     for lang, cfg in DEFAULT_CONFIG.items():
-        if lang in ("thresholds", "ignore_paths", "extra_args"):
+        if lang in ("thresholds", "ignore_paths"):
             continue
         tools_list = ["lint", "type_check", "formatter", "security"]
         lang_status: dict[str, bool] = {}

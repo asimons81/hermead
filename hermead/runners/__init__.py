@@ -60,7 +60,7 @@ def run(
 
 # ── Python runner adapter ──────────────────────────────────────────────
 # python.py exposes run_linter(file_path), run_type_checker(file_path),
-# run_formatter(file_path), run_security_scan(file_path).
+# run_formatter(file_path), run_security_scan(file_path, tool).
 # We wrap them to align with the (file_path, project_root, tool) signature.
 
 from hermead.runners.python import (
@@ -101,13 +101,14 @@ def _py_format(file_path: str, project_root: str | Path, **kwargs: Any) -> list[
 
 
 def _py_security(file_path: str, project_root: str | Path, **kwargs: Any) -> list[dict[str, Any]]:
-    raw = _py_run_security_scan(file_path)
+    tool = kwargs.get("tool", "bandit")
+    raw = _py_run_security_scan(file_path, tool=tool)
     normalised: list[dict[str, Any]] = []
     for r in raw:
         sev_raw = (r.get("severity") or "").upper()
         severity = "error" if sev_raw == "HIGH" else ("warning" if sev_raw == "MEDIUM" else "info")
         normalised.append({
-            "tool": "bandit",
+            "tool": tool,
             "severity": severity,
             "line": r.get("line"),
             "col": None,

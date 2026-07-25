@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Ruby runner** — rubocop (lint), standardrb (format), brakeman (security). Auto-detects `.rb`, `Gemfile`, `Rakefile`. Installs gems on first use. (@t_188a3459)
+- **Ruby runner** — rubocop (lint), standardrb (format), brakeman (security). Auto-detects `.rb`, `Gemfile`, `Rakefile` and uses already-installed gems. (@t_188a3459)
 - **Slash commands** — `/hermead check <file|dir>`, `/hermead status`, `/hermead config` registered via `ctx.register_command`. (@t_4e7f2989)
 - **CI pipeline** — GitHub Actions workflow (`test.yml`) running pytest on push and PR, with ruff + mypy dogfooding on Hermead's own source. (@t_72573cd1)
-- **Live smoke test** — hook pipeline verified end-to-end in a real Hermes session. Entry point fixed (`hermead:register` -> `hermead` module ref), detector catches `configparser.ParsingError`. (@t_9177de73)
+- **Live smoke test** — hook pipeline verified end-to-end in a real Hermes session. Entry point fixed (`hermead:register` -> `hermead` module ref); `pyproject.toml` is parsed as TOML. (@t_9177de73)
 
 ### Fixed
 

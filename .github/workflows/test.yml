@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -34,3 +34,13 @@ jobs:
 
       - name: Test with pytest
         run: pytest tests/ -v
+
+      - name: Build wheel
+        run: python -m pip wheel --no-deps --wheel-dir dist .
+
+      - name: Smoke-test built wheel
+        shell: bash
+        run: |
+          python -m venv wheel-smoke
+          wheel-smoke/bin/python -m pip install dist/*.whl
+          wheel-smoke/bin/python -c "import hermead; assert hermead.__version__ == '0.2.0'; assert callable(hermead.register)"

@@ -1,4 +1,4 @@
-"""JavaScript/TypeScript runner: eslint, prettier, tsc.
+"""JavaScript/TypeScript runner: eslint, prettier, tsc, and semgrep.
 
 Each function takes ``(file_path, tool)`` and returns a list of findings
 dicts. They skip gracefully when the tool is unavailable and return an
@@ -343,5 +343,52 @@ def run_type_checker(file_path: str, tool: str) -> list[dict[str, Any]]:
 
 
 def run_security_scan(file_path: str, tool: str) -> list[dict[str, Any]]:
-    """Placeholder: JavaScript security scanning not yet implemented."""
-    return []
+    """Run Semgrep security rules on one JavaScript or TypeScript file.
+
+    Semgrep is invoked only when it is already installed on PATH. It is not an
+    npm dependency, so this path cannot download packages through ``npx``.
+    """
+    if tool != "semgrep" or not _ts_or_js(file_path):
+        return []
+    if shutil.which("semgrep") is None:
+        return []
+
+    project_root = _find_js_project_root(file_path) or Path(file_path).resolve().parent
+    try:
+        proc = subprocess.run(
+            ["semgrep", "--json", "--quiet", "--no-error-on-files", "--config",
+             "p/security-audit", str(Path(file_path))],
+            capture_output=True,
+            text=True,
+            cwd=project_root,
+            timeout=120,
+            check=False,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return []
+
+    if not proc.stdout.strip():
+        return []
+    try:
+        data = json.loads(proc.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return []
+
+    findings: list[dict[str, Any]] = []
+    for result in data.get("results", []):
+        extra = result.get("extra", {})
+        raw_severity = str(extra.get("severity", "warning")).lower()
+        severity = "error" if raw_severity in {"critical", "error"} else (
+            "warning" if raw_severity in {"warning", "warn"} else "info"
+        )
+        findings.append(
+            _findings_item(
+                tool_name="semgrep",
+                severity=severity,
+                line=result.get("start", {}).get("line"),
+                col=result.get("start", {}).get("col"),
+                message=extra.get("message", ""),
+                code=result.get("check_id", ""),
+            )
+        )
+    return findings

@@ -71,7 +71,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "target/**",
         ".hermes/**",
     ],
-    "extra_args": {},
 }
 
 

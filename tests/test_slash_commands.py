@@ -2,9 +2,7 @@
 """
 from __future__ import annotations
 
-from pathlib import Path
-
-from hermead.slash_commands import handle, _handle_status, _handle_config
+from hermead.slash_commands import _handle_config, _handle_status, handle
 
 
 class TestSlashDispatcher:

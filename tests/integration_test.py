@@ -13,16 +13,16 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 import pytest
 
+from hermead import hooks, reporter
 from hermead.hooks import _file_type, _is_ignored, post_tool_call
 from hermead.reporter import format_full, format_inline, format_structured
-
 
 # ── Test fixtures ────────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ def test_project() -> Generator[Path, None, None]:
             "\n"
             "\n"
             'def greet(name: str) -> str:\n'
-            f'    return f"Hello {{name}}"',
+            '    return f"Hello {name}"',
             encoding="utf-8",
         )
 
@@ -214,6 +214,60 @@ class TestHooks:
         config = {"ignore_paths": ["node_modules/**"]}
         assert _is_ignored("/project/src/foo.py", config) is False
 
+    def test_documented_hook_signature_scans_write(
+        self, test_project: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Hermes' (tool_name, params, result) callback shape is honored."""
+        target = test_project / "written.py"
+        target.write_text("x = 1\n", encoding="utf-8")
+        dispatched: list[tuple[str, str]] = []
+
+        monkeypatch.setattr(
+            hooks, "detect_tooling", lambda _root: {"python": {"lint": "ruff"}}
+        )
+        monkeypatch.setattr(
+            hooks, "load_hermead_config", lambda _root: {"python": {}}
+        )
+        monkeypatch.setattr(
+            hooks,
+            "_run_check",
+            lambda _lang, path, tool, _action, _root: dispatched.append((path, tool))
+            or [],
+        )
+        monkeypatch.setattr(hooks, "record_results", lambda *_args, **_kwargs: None)
+
+        post_tool_call("write_file", {"path": str(target)}, {"status": "ok"})
+
+        assert dispatched == [(str(target), "ruff")]
+
+    def test_persistence_failure_does_not_break_hook(
+        self, test_project: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        target = test_project / "written.py"
+        target.write_text("x = 1\n", encoding="utf-8")
+
+        monkeypatch.setattr(hooks, "detect_tooling", lambda _root: {"python": {}})
+        monkeypatch.setattr(
+            hooks, "load_hermead_config", lambda _root: {"python": {}}
+        )
+
+        def fail_persistence(*_args: Any, **_kwargs: Any) -> None:
+            raise PermissionError("result store is read-only")
+
+        monkeypatch.setattr(hooks, "record_results", fail_persistence)
+
+        post_tool_call("write_file", {"path": str(target)}, {"status": "ok"})
+
+    def test_reporter_handles_unavailable_store(
+        self, test_project: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def deny_directory() -> None:
+            raise PermissionError("result store is read-only")
+
+        monkeypatch.setattr(reporter, "_ensure_dir", deny_directory)
+
+        reporter.record_results([], str(test_project / "written.py"), "python", test_project)
+
 
 # ── Integration tests ───────────────────────────────────────────────────────
 
@@ -232,9 +286,34 @@ class TestIntegration:
         post_tool_call("write_file", None, {"path": "/tmp/test.xyz"})
         assert True
 
-    def test_hook_runs_on_write_file(self, test_project: Path, capture_log: CaptureHandler) -> None:
-        """Write_file on a .py file inside a project triggers runners + reporter."""
+    def test_hook_runs_on_write_file(
+        self,
+        test_project: Path,
+        capture_log: CaptureHandler,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A write collects findings and formats them for the host."""
         bad_py = test_project / "bad_code.py"
+
+        def run_check(
+            _language: str,
+            _path: str,
+            tool: str,
+            _action: str,
+            _project_root: Path,
+        ) -> list[dict[str, Any]]:
+            if tool != "ruff":
+                return []
+            return [{
+                "tool": "ruff",
+                "severity": "error",
+                "line": 1,
+                "col": 1,
+                "message": "intentional finding",
+                "code": "F401",
+            }]
+
+        monkeypatch.setattr(hooks, "_run_check", run_check)
         post_tool_call("write_file", None, {"path": str(bad_py)})
 
         # Check that results were stored

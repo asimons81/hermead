@@ -47,11 +47,10 @@ hermes plugin list
 - **Zero-config for common projects.** Works out of the box with ruff + mypy for Python, eslint + prettier + tsc for JS/TS, golangci-lint + go vet + gofmt for Go, clippy + rustfmt for Rust, shellcheck for shell scripts, and rubocop + standardrb + brakeman for Ruby.
 - **Auto-detection.** Reads `pyproject.toml`, `package.json`, `go.mod`, `Cargo.toml`, `.shellcheckrc`, and `.rubocop.yml`/`Gemfile` to pick the right tools. Auto-detected tools take priority over config.
 - **Per-project config.** `.hermes/hermead.yaml` overrides global `~/.hermes/hermead.yaml`, which overrides built-in defaults.
-- **Threshold system.** Set findings to `block`, `warn`, or `ignore` per severity level (lint warnings, type errors, security findings).
+- **Advisory thresholds.** `block` writes a prominent hook warning for a configured finding category; thresholds never reject the original tool call or remove findings from the report.
 - **7 language runners.** Python, JavaScript/TypeScript, Go, Rust, Shell, Ruby, and a Generic runner for config/script files (semgrep).
 - **Graceful degredation.** Missing tools produce empty results. No crashes, no spurious errors. Use `which <tool>` to check availability.
 - **Ignore patterns.** Skip `node_modules/`, `venv/`, build output dirs, and anything else you add.
-- **Extra CLI args.** Pass custom flags per tool (e.g. `ruff: ["--line-length", "100"]`).
 
 ## Configuration
 
@@ -80,7 +79,8 @@ ignore_paths:
 ### Full Reference
 
 ```yaml
-# Per-language tool assignments (null = skip that check category)
+# Per-language tool assignments. `null` skips the configured fallback for that
+# category; a tool detected from project configuration still takes precedence.
 python:
   lint: ruff
   type_check: mypy
@@ -114,11 +114,10 @@ generic:
   security: semgrep
 
 thresholds:
-  lint_warnings: warn       # warn | block | ignore
+  lint_warnings: warn       # `block` emits an advisory log warning
   type_errors: block
   security_high: block
   security_medium: warn
-  security_low: info
 
 ignore_paths:
   - node_modules/**
@@ -131,11 +130,17 @@ ignore_paths:
   - target/**
   - .hermes/**
 
-extra_args:
-  ruff: ["--line-length", "100"]
-  mypy: ["--strict"]
-  golangci-lint: ["--timeout", "5m"]
 ```
+
+Configure tool-specific options in the tool's normal project configuration
+(such as `pyproject.toml`, `eslint.config.*`, or `.golangci.yml`).
+
+## Safety
+
+HermeAd runs local analyzers in the target project's directory. Those tools may
+load project configuration, plugins, or dependencies, so only enable HermeAd
+for repositories you trust. Review a repository's analyzer configuration before
+running checks against unfamiliar code.
 
 ## Supported Languages
 
@@ -183,8 +188,10 @@ HermeAd is a Hermes Agent plugin — no MCP server, no web server, no external A
 
 ```toml
 [project.entry-points."hermes_agent.plugins"]
-hermead = "hermead:register"
+hermead = "hermead"
 ```
+
+The `hermead` module exports `register`, which Hermes uses to load the plugin.
 
 For more on building Hermes plugins, see the [Hermes Agent Plugin Docs](https://hermes-agent.nousresearch.com/docs/plugins).
 

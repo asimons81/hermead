@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -196,10 +197,28 @@ def _log_threshold_warnings(
 # ── Hook implementation ──────────────────────────────────────────────────
 
 
+def _modified_path(params: Any, extra: Mapping[str, Any]) -> str | None:
+    """Extract a modified path from documented and legacy hook call shapes."""
+    candidates = [params, extra.get("params"), extra.get("kwargs"), extra]
+    legacy_result = extra.get("result")
+    if isinstance(legacy_result, Mapping):
+        candidates.append(legacy_result)
+
+    for candidate in candidates:
+        if not isinstance(candidate, Mapping):
+            continue
+        value = candidate.get("path")
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, str) and value.strip():
+            return value
+    return None
+
+
 def post_tool_call(
     tool_name: str,
-    result: Any,
-    kwargs: dict[str, Any] | None = None,
+    params: Any = None,
+    result: Any = None,
     **extra: Any,
 ) -> None:
     """Post-tool-call hook: detect write_file/patch on project files.
@@ -214,8 +233,12 @@ def post_tool_call(
     if tool_name not in ("write_file", "patch"):
         return
 
-    kwargs = kwargs or {}
-    modified_path = kwargs.get("path", "")
+    # Hermes calls this hook as (tool_name, params, result).  Older HermeAd
+    # releases accepted (tool_name, result, kwargs), so retain that shape when
+    # the documented params argument does not include a path.
+    if not _modified_path(params, extra) and isinstance(result, Mapping):
+        extra = {**extra, "result": result}
+    modified_path = _modified_path(params, extra)
     if not modified_path:
         return
 
@@ -282,7 +305,17 @@ def post_tool_call(
     _log_threshold_warnings(all_results, thresholds)
 
     # Persist results for the dashboard
-    record_results(all_results, file_path=path_str, language=ftype, project_root=project_root)
+    try:
+        record_results(
+            all_results,
+            file_path=path_str,
+            language=ftype,
+            project_root=project_root,
+        )
+    except Exception:
+        # Dashboard persistence is optional; it must not break the host's
+        # file-write lifecycle when the user home directory is unavailable.
+        logger.warning("HermeAd could not persist scan results", exc_info=True)
 
     # Store results as function attributes for test assertions and dashboards
     post_tool_call._last_results = all_results  # type: ignore[attr-defined]

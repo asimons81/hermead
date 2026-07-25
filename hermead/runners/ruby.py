@@ -1,8 +1,8 @@
 """Ruby runner: rubocop, standardrb, brakeman.
 
 Each function takes (file_path, project_root, **kwargs) and returns a list
-of finding dicts. Tools are auto-installed via gem on first use if missing.
-All tools skip gracefully when Ruby is not available.
+of finding dicts. Missing tools skip gracefully; hooks never install gems or
+otherwise modify the user's environment.
 """
 
 from __future__ import annotations
@@ -19,36 +19,13 @@ from hermead.runners import register_runner
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 
-def _has_ruby() -> bool:
-    return shutil.which("ruby") is not None
-
-
 def _has_tool(name: str) -> bool:
     return shutil.which(name) is not None
 
 
-def _gem_install(tool: str) -> bool:
-    """Try to install *tool* via gem install. Returns True on success."""
-    try:
-        proc = subprocess.run(
-            ["gem", "install", tool, "--no-document"],
-            capture_output=True,
-            text=True,
-            timeout=120,
-            check=False,
-        )
-        return proc.returncode == 0
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        return False
-
-
 def _ensure_tool(tool: str) -> bool:
-    """Ensure *tool* is available — find or auto-install on first use."""
-    if _has_tool(tool):
-        return True
-    if not _has_ruby():
-        return False
-    return _gem_install(tool)
+    """Return whether *tool* is already available without installing it."""
+    return _has_tool(tool)
 
 
 def _print_run(

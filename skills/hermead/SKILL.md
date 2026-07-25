@@ -29,7 +29,7 @@ Every time Hermes runs `write_file` or `patch` on a project file, HermeAd:
 
 ## When to Use
 
-- **Code quality reports appear** in your session output. Use this skill to interpret the structured results, understand what each tool checks, and know which threshold blocks vs warns.
+- **Code quality reports appear** in your session output. Use this skill to interpret the structured results and understand what each tool checks. Thresholds are advisory and never stop the original tool call.
 - **Configuring HermeAd for a new project.** Use this skill to set up `.hermes/hermead.yaml` with the right tools, thresholds, and ignore patterns.
 - **A tool is missing or not working.** Use this skill to check tool availability and debug runner issues.
 - **Don't use for:** writing lint rules, configuring build pipelines that don't run through Hermes, or managing CI/CD systems outside Hermes.
@@ -85,9 +85,6 @@ ignore_paths:
   - venv/**
   - __pycache__/**
 
-extra_args:
-  ruff: ["--line-length", "100"]
-  mypy: ["--strict"]
 ```
 
 ### Global Defaults
@@ -99,13 +96,13 @@ Place `~/.hermes/hermead.yaml` for settings that apply across every project. Per
 ```yaml
 # Per-language tool overrides
 python:
-  lint: ruff              # or: pylint, flake8
-  type_check: mypy        # or: pyright
+  lint: ruff
+  type_check: mypy
   formatter: ruff         # or: black
   security: semgrep       # or: bandit
 
 javascript:
-  lint: eslint            # or: jshint
+  lint: eslint
   type_check: tsc         # TypeScript only
   formatter: prettier
   security: semgrep
@@ -130,13 +127,12 @@ generic:
   lint: semgrep
   security: semgrep
 
-# Thresholds control whether findings block or warn
+# `block` emits an advisory log warning; it never blocks the source write.
 thresholds:
-  lint_warnings: warn     # warn | block | ignore
+  lint_warnings: warn
   type_errors: block
   security_high: block
   security_medium: warn
-  security_low: info
 
 # Glob patterns to skip
 ignore_paths:
@@ -150,12 +146,9 @@ ignore_paths:
   - target/**
   - .hermes/**
 
-# Extra CLI flags per tool
-extra_args:
-  ruff: ["--line-length", "100"]
-  mypy: ["--strict"]
-  golangci-lint: ["--timeout", "5m"]
 ```
+
+Set options in each tool's own project configuration.
 
 ## Slash Commands
 
@@ -268,7 +261,7 @@ HermeAd auto-detects which tools your project uses by reading config files:
 - **Rust:** `Cargo.toml` content for audit tooling
 - **Shell:** `.shellcheckrc` presence
 
-Auto-detection takes priority over explicit config. This means a project with `pyproject.toml` + `[tool.ruff]` will use ruff for linting even if the config file says something else.
+Auto-detection takes priority over explicit config. This means a project with `pyproject.toml` + `[tool.ruff]` will use ruff for linting even if the config file says something else. Setting a configured tool to `null` only removes the configured fallback; it does not disable auto-detection.
 
 ## Common Pitfalls
 
@@ -276,15 +269,15 @@ Auto-detection takes priority over explicit config. This means a project with `p
 
 2. **Config file in wrong location.** Per-project config must go in `<project-root>/.hermes/hermead.yaml`, not `.hermead.yaml` or `hermead.yaml` at root. Global config goes in `~/.hermes/hermead.yaml`.
 
-3. **Auto-detection overriding your config.** If `pyproject.toml` has `[tool.ruff]` but you set `lint: flake8` in `hermead.yaml`, flake8 won't run — auto-detected tools win. Either remove the `[tool.ruff]` section or set the tool config key to `null` to skip auto-detect for that tool.
+3. **Auto-detection overriding your config.** If `pyproject.toml` has `[tool.ruff]`, its ruff configuration takes priority over another configured linter. To use a different tool, remove the detected tool configuration.
 
 4. **Sensitive files not ignored.** By default HermeAd skips `node_modules/`, `venv/`, `.git/`, and common build output dirs. Add your own patterns if you're using a monorepo with unconventional output paths.
 
-5. **Threshold confusion.** `block` means a prominent warning in the log output. `warn` means a passive suggestion in the output. `ignore` means the result is discarded. Hermes plugin hooks can't prevent tool execution, so thresholds are advisory only — they log warnings when exceeded but do not block the tool call. Thresholds apply per-severity: a `type_errors: block` warns on actual type errors, not all findings.
+5. **Threshold confusion.** `block` means a prominent warning in the log output. Thresholds are advisory: they cannot block the source tool call and do not discard findings.
 
 6. **Format checks are read-only.** HermeAd checks whether a file matches formatter output but never auto-formats. Format-check results appear as `style`-severity items when formatting would change the file. Run the formatter manually or configure a save-hook in your editor.
 
-7. **Plugin not registering.** After `pip install hermead`, verify the plugin loads: `hermes plugin list` should show `hermead`. If it doesn't, check that `pyproject.toml` has the correct entry point (`hermead = "hermead:register"` under `[project.entry-points."hermes_agent.plugins"]`).
+7. **Plugin not registering.** After `pip install hermead`, verify the plugin loads: `hermes plugin list` should show `hermead`. If it doesn't, check that `pyproject.toml` has the correct entry point (`hermead = "hermead"` under `[project.entry-points."hermes_agent.plugins"]`).
 
 ## Verification Checklist
 
