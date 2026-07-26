@@ -151,22 +151,27 @@ def _log_threshold_warnings(
     security_medium = 0
 
     security_tools = {"bandit", "gosec", "cargo audit", "semgrep", "brakeman"}
+    lint_tools = {"ruff", "eslint", "golangci-lint", "clippy", "shellcheck", "rubocop"}
+    type_check_tools = {"mypy", "tsc", "go vet", "rustc"}
 
     for r in results:
         tool = r.get("tool", "")
         sev = r.get("severity", "")
-        if sev != "error":
-            continue
 
-        # Lint tools
-        if tool in {"ruff", "eslint", "golangci-lint", "clippy", "shellcheck", "rubocop"}:
-            lint_errors += 1
+        # Lint tools — count only errors (warnings are informational)
+        if tool in lint_tools:
+            if sev == "error":
+                lint_errors += 1
         # Type check tools
-        elif tool in {"mypy", "tsc", "go vet", "rustc"}:
-            type_errors += 1
-        # Security tools — bandit, gosec, cargo audit, brakeman
+        elif tool in type_check_tools:
+            if sev == "error":
+                type_errors += 1
+        # Security tools — split high (error) from medium (warning)
         elif tool in security_tools:
-            security_high += 1
+            if sev == "error":
+                security_high += 1
+            elif sev == "warning":
+                security_medium += 1
 
     # Check thresholds
     if lint_errors > 0 and thresholds.get("lint_warnings") == "block":
@@ -187,7 +192,7 @@ def _log_threshold_warnings(
             security_high,
         )
 
-    if security_high > 0 and thresholds.get("security_medium") == "block":
+    if security_medium > 0 and thresholds.get("security_medium") == "block":
         logger.warning(
             "Hermead threshold: %d MEDIUM security findings (threshold=block)",
             security_medium,
