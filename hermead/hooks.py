@@ -1,4 +1,4 @@
-"""Hook implementations for HermeAd.
+"""Hook implementations for Hermead.
 
 The primary hook is ``post_tool_call`` which fires after every Hermes tool
 invocation. It detects write_file / patch calls on project files and routes
@@ -171,25 +171,25 @@ def _log_threshold_warnings(
     # Check thresholds
     if lint_errors > 0 and thresholds.get("lint_warnings") == "block":
         logger.warning(
-            "HermeAd threshold: %d lint errors found (threshold=block)",
+            "Hermead threshold: %d lint errors found (threshold=block)",
             lint_errors,
         )
 
     if type_errors > 0 and thresholds.get("type_errors") == "block":
         logger.warning(
-            "HermeAd threshold: %d type errors found (threshold=block)",
+            "Hermead threshold: %d type errors found (threshold=block)",
             type_errors,
         )
 
     if security_high > 0 and thresholds.get("security_high") == "block":
         logger.warning(
-            "HermeAd threshold: %d HIGH security findings (threshold=block)",
+            "Hermead threshold: %d HIGH security findings (threshold=block)",
             security_high,
         )
 
     if security_high > 0 and thresholds.get("security_medium") == "block":
         logger.warning(
-            "HermeAd threshold: %d MEDIUM security findings (threshold=block)",
+            "Hermead threshold: %d MEDIUM security findings (threshold=block)",
             security_medium,
         )
 
@@ -225,7 +225,7 @@ def post_tool_call(
 
     When a tool modifies a project file, this hook:
     1. Determines the file type from the extension map.
-    2. Loads the effective HermeAd config (global + per-project).
+    2. Loads the effective Hermead config (global + per-project).
     3. Auto-detects project tooling.
     4. Routes to the appropriate runner for lint / type-check / format / security.
     """
@@ -233,7 +233,7 @@ def post_tool_call(
     if tool_name not in ("write_file", "patch"):
         return
 
-    # Hermes calls this hook as (tool_name, params, result).  Older HermeAd
+    # Hermes calls this hook as (tool_name, params, result).  Older Hermead
     # releases accepted (tool_name, result, kwargs), so retain that shape when
     # the documented params argument does not include a path.
     if not _modified_path(params, extra) and isinstance(result, Mapping):
@@ -298,7 +298,7 @@ def post_tool_call(
     # Format and report results
     if all_results:
         report_text = format_full(all_results)
-        logger.info("HermeAd report:\n%s", report_text)
+        logger.info("Hermead report:\n%s", report_text)
 
     # Threshold enforcement (non-blocking — plugin hooks can't prevent tool execution)
     thresholds = config.get("thresholds", {})
@@ -315,7 +315,7 @@ def post_tool_call(
     except Exception:
         # Dashboard persistence is optional; it must not break the host's
         # file-write lifecycle when the user home directory is unavailable.
-        logger.warning("HermeAd could not persist scan results", exc_info=True)
+        logger.warning("Hermead could not persist scan results", exc_info=True)
 
     # Store results as function attributes for test assertions and dashboards
     post_tool_call._last_results = all_results  # type: ignore[attr-defined]

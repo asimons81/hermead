@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "intentional-issues"
 version = "0.1.0"
-description = "Test fixture for HermeAd"
+description = "Test fixture for Hermead"
 requires-python = ">=3.11"
 
 [tool.ruff]

@@ -1,4 +1,4 @@
-"""Slash command handlers for HermeAd.
+"""Slash command handlers for Hermead.
 
 Provides /hermead with three subcommands:
 - check <file_or_dir> — runs applicable runners on a file/directory
@@ -88,7 +88,7 @@ def _handle_check(raw_args: str) -> str:
     if project_root is None:
         return (
             f"Error: cannot find project root for '{target}'.\n"
-            "HermeAd needs a .git, .hg, or .hermes directory in the path."
+            "Hermead needs a .git, .hg, or .hermes directory in the path."
         )
 
     path = Path(target)
@@ -124,13 +124,13 @@ def _handle_check(raw_args: str) -> str:
 
     if not all_results:
         return (
-            f"HermeAd check: {checked_count} file(s) checked, "
+            f"Hermead check: {checked_count} file(s) checked, "
             "no issues found."
         )
 
     report = format_full(all_results)
     return (
-        f"HermeAd check: {checked_count} file(s) checked, "
+        f"Hermead check: {checked_count} file(s) checked, "
         f"{len(all_results)} finding(s)\n\n{report}"
     )
 
@@ -287,7 +287,7 @@ def handle(raw_args: str) -> str:
 
     if not parts:
         return (
-            "HermeAd: /hermead <subcommand> [args]\n\n"
+            "Hermead: /hermead <subcommand> [args]\n\n"
             "Subcommands:\n"
             "  check <file|dir>   Run all applicable checks on a file or directory\n"
             "  status             Show tool availability, config paths, and session stats\n"

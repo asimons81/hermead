@@ -1,17 +1,17 @@
-# HermeAd
+# Hermead
 
 [![PyPI version](https://img.shields.io/pypi/v/hermead?color=blue)](https://pypi.org/project/hermead/)
 [![License](https://img.shields.io/pypi/l/hermead?color=green)](LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/hermead?color=blueviolet)](https://pypi.org/project/hermead/)
 [![CI](https://github.com/asimons81/hermead/actions/workflows/test.yml/badge.svg)](https://github.com/asimons81/hermead/actions/workflows/test.yml)
 
-**HermeAd** is a Hermes Agent plugin that automatically runs linters, type checkers, formatters, and security scanners on project files after every `write_file` or `patch` tool call.
+**Hermead** is a Hermes Agent plugin that automatically runs linters, type checkers, formatters, and security scanners on project files after every `write_file` or `patch` tool call.
 
 No manual commands. No context switching. Files get checked the moment you write them.
 
 ## How It Works
 
-HermeAd registers a single `post_tool_call` hook. After each file modification:
+Hermead registers a single `post_tool_call` hook. After each file modification:
 
 1. Detects the file type from extension or filename
 2. Walks up the tree to find the project root (`.git`, `.hg`, or `.hermes` directory)
@@ -137,8 +137,8 @@ Configure tool-specific options in the tool's normal project configuration
 
 ## Safety
 
-HermeAd runs local analyzers in the target project's directory. Those tools may
-load project configuration, plugins, or dependencies, so only enable HermeAd
+Hermead runs local analyzers in the target project's directory. Those tools may
+load project configuration, plugins, or dependencies, so only enable Hermead
 for repositories you trust. Review a repository's analyzer configuration before
 running checks against unfamiliar code.
 
@@ -156,7 +156,7 @@ running checks against unfamiliar code.
 
 ## Inline Reports
 
-When HermeAd runs, findings appear in your session as structured results:
+When Hermead runs, findings appear in your session as structured results:
 
 ```
 🔍 ruff: 1 error
@@ -168,7 +168,7 @@ Each result shows the tool, severity, source location, message, and rule code. E
 
 ## Contributing
 
-PRs welcome. HermeAd is a young project — the runner interface, result format, and hooks API are still finding their shape.
+PRs welcome. Hermead is a young project — the runner interface, result format, and hooks API are still finding their shape.
 
 - Runners live in `hermead/runners/`. Each module self-registers via `register_runner(language, action, func)`.
 - The hook dispatcher lives in `hermead/hooks.py`.
@@ -184,7 +184,7 @@ pytest -v
 
 ## Plugin Architecture
 
-HermeAd is a Hermes Agent plugin — no MCP server, no web server, no external API. It registers a single hook entry point in `pyproject.toml`:
+Hermead is a Hermes Agent plugin — no MCP server, no web server, no external API. It registers a single hook entry point in `pyproject.toml`:
 
 ```toml
 [project.entry-points."hermes_agent.plugins"]

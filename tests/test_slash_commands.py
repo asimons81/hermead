@@ -1,4 +1,4 @@
-"""Tests for the HermeAd slash command handlers.
+"""Tests for the Hermead slash command handlers.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ class TestSlashDispatcher:
 
     def test_empty_args(self) -> None:
         result = handle("")
-        assert "HermeAd:" in result
+        assert "Hermead:" in result
         assert "check" in result
         assert "status" in result
         assert "config" in result

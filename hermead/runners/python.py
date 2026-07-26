@@ -1,4 +1,4 @@
-"""Python runner for HermeAd.
+"""Python runner for Hermead.
 
 Runs ruff (lint), mypy (type check), bandit (security), and
 ruff format / black (format check) on a Python file and returns
@@ -53,7 +53,7 @@ def _check_tool(name: str) -> bool:
 
 
 def _warn_missing_tool(tool: str) -> None:
-    logger.debug("HermeAd: %s not on PATH — skipping", tool)
+    logger.debug("Hermead: %s not on PATH — skipping", tool)
 
 
 # ── Ruff linter (ruff check) ──────────────────────────────────────────────
@@ -115,7 +115,7 @@ def run_linter(file_path: str) -> list[dict[str, Any]]:
             check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug("HermeAd: ruff check failed: %s", exc)
+        logger.debug("Hermead: ruff check failed: %s", exc)
         return []
 
     output = (result.stdout or result.stderr).strip()
@@ -175,7 +175,7 @@ def run_type_checker(file_path: str) -> list[dict[str, Any]]:
             check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug("HermeAd: mypy failed: %s", exc)
+        logger.debug("Hermead: mypy failed: %s", exc)
         return []
 
     output = (result.stdout or result.stderr).strip()
@@ -227,12 +227,12 @@ def _run_bandit_security_scan(file_path: str) -> list[dict[str, Any]]:
             check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug("HermeAd: bandit failed: %s", exc)
+        logger.debug("Hermead: bandit failed: %s", exc)
         return []
 
     # bandit exits 0 (no issues) or 1 (issues found) — both are valid
     if result.returncode not in (0, 1):
-        logger.debug("HermeAd: bandit returned rc=%d", result.returncode)
+        logger.debug("Hermead: bandit returned rc=%d", result.returncode)
         return []
 
     if not result.stdout.strip():
@@ -241,7 +241,7 @@ def _run_bandit_security_scan(file_path: str) -> list[dict[str, Any]]:
     try:
         data = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        logger.debug("HermeAd: bandit JSON parse failed: %s", exc)
+        logger.debug("Hermead: bandit JSON parse failed: %s", exc)
         return []
 
     return _parse_bandit_json(data)
@@ -278,14 +278,14 @@ def _run_semgrep_security_scan(file_path: str) -> list[dict[str, Any]]:
             capture_output=True, text=True, timeout=120, check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.debug("HermeAd: semgrep failed: %s", exc)
+        logger.debug("Hermead: semgrep failed: %s", exc)
         return []
     if not result.stdout.strip():
         return []
     try:
         return _parse_semgrep_json(json.loads(result.stdout))
     except json.JSONDecodeError as exc:
-        logger.debug("HermeAd: semgrep JSON parse failed: %s", exc)
+        logger.debug("Hermead: semgrep JSON parse failed: %s", exc)
         return []
 
 
@@ -299,7 +299,7 @@ def run_security_scan(file_path: str, tool: str = "bandit") -> list[dict[str, An
         return _run_bandit_security_scan(file_path)
     if tool == "semgrep":
         return _run_semgrep_security_scan(file_path)
-    logger.debug("HermeAd: unsupported Python security tool %r -- skipping", tool)
+    logger.debug("Hermead: unsupported Python security tool %r -- skipping", tool)
     return []
 
 
@@ -340,7 +340,7 @@ def run_formatter(file_path: str, tool: str = "black") -> dict[str, bool]:
                 check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as exc:
-            logger.debug("HermeAd: ruff format --check failed: %s", exc)
+            logger.debug("Hermead: ruff format --check failed: %s", exc)
             return {"needs_formatting": False}
         return {"needs_formatting": result.returncode != 0}
 
@@ -357,12 +357,12 @@ def run_formatter(file_path: str, tool: str = "black") -> dict[str, bool]:
                 check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as exc:
-            logger.debug("HermeAd: black --check failed: %s", exc)
+            logger.debug("Hermead: black --check failed: %s", exc)
             return {"needs_formatting": False}
         return {"needs_formatting": result.returncode != 0}
 
     # Unknown tool -- graceful no-op
-    logger.debug("HermeAd: unknown formatter tool %r -- skipping", tool)
+    logger.debug("Hermead: unknown formatter tool %r -- skipping", tool)
     return {"needs_formatting": False}
 
 
@@ -432,7 +432,7 @@ def run_all(
     file_path:
         Absolute or relative path to the Python file to check.
     config:
-        Effective HermeAd config (from ``load_hermead_config``). May contain
+        Effective Hermead config (from ``load_hermead_config``). May contain
         a ``python`` section with tool assignments. Defaults to empty.
     detected:
         Auto-detected tooling (from ``detect_tooling``). May contain a

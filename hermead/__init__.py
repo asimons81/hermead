@@ -1,4 +1,4 @@
-"""HermeAd: Hermes Agent plugin for project-level linting, type-checking, formatting, and security scanning.
+"""Hermead: Hermes Agent plugin for project-level linting, type-checking, formatting, and security scanning.
 
 Runs entirely through Hermes hook system. No external API, no MCP server, no web server.
 """
@@ -20,7 +20,7 @@ __version__ = "0.2.0"
 
 
 def register(ctx: Any | None = None) -> dict[str, Any] | None:
-    """Register HermeAd hooks and slash commands with the Hermes Agent plugin system.
+    """Register Hermead hooks and slash commands with the Hermes Agent plugin system.
 
     Supports both:
     - New ctx-based API (ctx.register_hook, ctx.register_command)
@@ -32,7 +32,7 @@ def register(ctx: Any | None = None) -> dict[str, Any] | None:
         ctx.register_command(
             "hermead",
             handler=handle_slash_command,
-            description="Run HermeAd checks and view config/status",
+            description="Run Hermead checks and view config/status",
         )
         return None
     else:

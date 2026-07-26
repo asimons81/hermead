@@ -1,1 +1,1 @@
-"""Tests for HermeAd plugin."""
+"""Tests for Hermead plugin."""

@@ -1,4 +1,4 @@
-"""Reporter module for HermeAd — formatting and persistence.
+"""Reporter module for Hermead — formatting and persistence.
 
 Layers:
 - Inline / structured formatting for the agent's chat output
@@ -196,7 +196,7 @@ def _load() -> dict[str, Any]:
             return json.loads(raw)
     except (json.JSONDecodeError, OSError):
         logger.warning(
-            "HermeAd result store is unavailable; using an in-memory store",
+            "Hermead result store is unavailable; using an in-memory store",
             exc_info=True,
         )
     return _empty_store()
@@ -218,7 +218,7 @@ def _save(data: dict[str, Any]) -> bool:
         os.replace(tmp_path, RESULTS_FILE)
         return True
     except (OSError, TypeError, ValueError):
-        logger.warning("HermeAd could not save result store", exc_info=True)
+        logger.warning("Hermead could not save result store", exc_info=True)
         return False
     finally:
         if tmp_path is not None:

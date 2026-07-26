@@ -1,4 +1,4 @@
-"""Integration test: end-to-end HermeAd hook → runner → reporter pipeline.
+"""Integration test: end-to-end Hermead hook → runner → reporter pipeline.
 
 Creates a test project with intentional issues, invokes the post_tool_call
 hook, and verifies that:
@@ -327,8 +327,8 @@ class TestIntegration:
         assert structured is not None
         assert structured["summary"]["total"] > 0
 
-        # Check that the reporter logged something with HermeAd prefix
-        hermead_records = [r for r in capture_log.records if "HermeAd" in r.getMessage()]
+        # Check that the reporter logged something with Hermead prefix
+        hermead_records = [r for r in capture_log.records if "Hermead" in r.getMessage()]
         report_records = [r for r in hermead_records if "report" in r.getMessage()]
         assert len(report_records) >= 1, "Expected at least one report log message"
 

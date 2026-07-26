@@ -1,4 +1,4 @@
-"""Runner registry for HermeAd.
+"""Runner registry for Hermead.
 
 Each runner module registers itself at import time via
 ``register_runner(language, action, func)``.

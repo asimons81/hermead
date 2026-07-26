@@ -93,7 +93,7 @@ ESLINT_SEVERITY_MAP = {1: "warning", 2: "error"}
 
 
 def _parse_eslint_results(data: Any) -> list[dict[str, Any]]:
-    """Parse the ESLint JSON output array into HermeAd finding dicts."""
+    """Parse the ESLint JSON output array into Hermead finding dicts."""
     findings: list[dict[str, Any]] = []
     if not isinstance(data, list):
         return findings
@@ -270,7 +270,7 @@ def _ts_or_js(file_path: str) -> bool:
 def _parse_tsc_output(
     stdout: str, stderr: str, file_path: str, project_root: Path, tool: str
 ) -> list[dict[str, Any]]:
-    """Parse tsc --noEmit output into HermeAd finding dicts.
+    """Parse tsc --noEmit output into Hermead finding dicts.
 
     *project_root* is used to resolve relative source file paths from
     tsc output against the correct directory.

@@ -1,4 +1,4 @@
-"""Configuration loader for HermeAd.
+"""Configuration loader for Hermead.
 
 Loads .hermes/hermead.yaml with per-project first, then global fallback.
 """
@@ -88,7 +88,7 @@ def find_project_root(path: str | Path | None = None) -> Path | None:
 
 
 def load_hermead_config(path: str | Path | None = None) -> dict[str, Any]:
-    """Load the effective HermeAd config, merging global → per-project overrides.
+    """Load the effective Hermead config, merging global → per-project overrides.
 
     1. Start with DEFAULT_CONFIG.
     2. Overlay ``~/.hermes/hermead.yaml`` if it exists (global).
